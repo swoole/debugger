@@ -6,18 +6,22 @@ $serv->set(array(
 ));
 $serv->on('connect', function ($serv, $fd)
 {
-    echo "Client:Connect.\n";
+    echo "Client#$fd: Connect.\n";
 });
 $serv->on('receive', function ($serv, $fd, $from_id, $data)
 {
     $serv->send($fd, 'Swoole: ' . $data);
-    $serv->close($fd);
 });
 $serv->on('close', function ($serv, $fd)
 {
-    echo "Client: Close.\n";
+    echo "Client#$fd: Close.\n";
 });
 
 RemoteShell::listen($serv);
+
+class Test
+{
+    static $a = 133;
+}
 
 $serv->start();
