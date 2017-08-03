@@ -37,10 +37,10 @@ class RemoteShell
         }
         $port->set(array("open_eof_split" => true,
             'package_eof' => "\r\n"));
-        $port->on("Connect", 'RemoteShell::onConnect');
-        $port->on("Close", 'RemoteShell::onClose');
-        $port->on("Receive", 'RemoteShell::onReceive');
-        $serv->on("PipeMessage", 'RemoteShell::onPipeMessage');
+        $port->on("Connect", array(__CLASS__, 'onConnect'));
+        $port->on("Close", array(__CLASS__, 'onClose'));
+        $port->on("Receive", array(__CLASS__, 'onReceive'));
+        $serv->on("PipeMessage", array(__CLASS__, 'onPipeMessage'));
         self::$serv = $serv;
     }
 
