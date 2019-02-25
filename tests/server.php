@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/src/RemoteShell.php';
+
 $serv = new swoole_server("127.0.0.1", 9501);
 $serv->set(array(
     'worker_num' => 2,   //工作进程数量
@@ -17,6 +18,11 @@ $serv->on('close', function ($serv, $fd)
     echo "Client#$fd: Close.\n";
 });
 
+$serv->on('pipeMessage', function ($serv, $fd, $msg)
+{
+    var_dump($fd, $msg);
+});
+
 $serv->on("workerStart", function ($server, $workerId) {
     if ($workerId == 1) {
         return;
@@ -25,6 +31,12 @@ $serv->on("workerStart", function ($server, $workerId) {
         Test::test1();
     });
 });
+
+function test3()
+{
+    global $serv;
+    $serv->sendMessage(["hello", "world"], 1 - $serv->worker_id);
+}
 
 RemoteShell::listen($serv);
 

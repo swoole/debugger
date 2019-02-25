@@ -2,7 +2,11 @@
 
 class RemoteShell
 {
-    static $contexts = array();
+    const STX = "DEBUG";
+
+    private static $contexts = array();
+
+    static $oriPipeMessageCallback = null;
 
     /**
      * @var \swoole\server
@@ -10,8 +14,8 @@ class RemoteShell
     static $serv;
 
     static $menu = array(
-        "p|print [variant]\t打印某PHP变量的值",
-        "e|exec [code]\t执行PHP代码",
+        "p|print [variant]\t打印一个PHP变量的值",
+        "e|exec [code]\t执行一段PHP代码",
         "w|worker [id]\t切换Worker进程",
         "l|list\t打印服务器所有连接的fd",
         "s|stats\t打印服务器状态",
@@ -43,6 +47,11 @@ class RemoteShell
         $port->on("Connect", array(__CLASS__, 'onConnect'));
         $port->on("Close", array(__CLASS__, 'onClose'));
         $port->on("Receive", array(__CLASS__, 'onReceive'));
+
+        if (method_exists($serv, 'getCallback')) {
+            self::$oriPipeMessageCallback = $serv->getCallback('PipeMessage');
+        }
+
         $serv->on("PipeMessage", array(__CLASS__, 'onPipeMessage'));
         self::$serv = $serv;
     }
@@ -68,23 +77,35 @@ class RemoteShell
         unset(self::$contexts[$fd]);
     }
 
-    static function onPipeMessage($serv, $from_worker_id, $message)
+    static function onPipeMessage($serv, $src_worker_id, $message)
     {
-        $arr = explode("\r\n", $message, 3);
-        ob_start();
-        eval($arr[2] . ";");
-        self::output($arr[1], ob_get_clean());
+        //不是 debug 消息
+        if (!is_string($message) or substr($message, 0, strlen(self::STX)) != self::STX) {
+            if (self::$oriPipeMessageCallback == null) {
+                trigger_error("require swoole-4.3.0 or later.", E_USER_WARNING);
+                return;
+            }
+            return call_user_func(self::$oriPipeMessageCallback, $serv, $src_worker_id, $message);
+        } else {
+            $request = unserialize(substr($message, strlen(self::STX)));
+            self::call($request['fd'], $request['func'], $request['args']);
+        }
     }
 
-    static protected function execCode($fd, $code)
+    static protected function call($fd, $func, $args)
+    {
+        ob_start();
+        call_user_func_array($func, $args);
+        self::output($fd, ob_get_clean());
+    }
+
+    static protected function exec($fd, $func, $args)
     {
         //不在当前Worker进程
         if (self::$contexts[$fd]['worker_id'] != self::$serv->worker_id) {
-            self::$serv->sendMessage(__CLASS__ . "\r\n$fd\r\n" . $code, self::$contexts[$fd]['worker_id']);
+            self::$serv->sendMessage(self::STX . serialize(['fd' => $fd, 'func' => $func, 'args' => $args]), self::$contexts[$fd]['worker_id']);
         } else {
-            ob_start();
-            eval($code . ";");
-            self::output($fd, ob_get_clean());
+            self::call($fd, $func, $args);
         }
     }
 
@@ -101,6 +122,18 @@ class RemoteShell
         } else {
             echo get_debug_print_backtrace($info);
         }
+    }
+
+    static function printVariant($var)
+    {
+        $var = ltrim($var, '$ ');
+        var_dump($var);
+        var_dump($$var);
+    }
+
+    static function evalCode($code)
+    {
+        eval($code.';');
     }
 
     /**
@@ -127,12 +160,17 @@ class RemoteShell
                 break;
             case 'e':
             case 'exec':
-                self::execCode($fd, $args[1]);
+                if (!isset($args[1])) {
+                    self::output($fd, "invalid command.");
+                    break;
+                }
+                $var = trim($args[1]);
+                self::exec($fd, 'self::evalCode', [$var]);
                 break;
             case 'p':
             case 'print':
                 $var = trim($args[1]);
-                self::execCode($fd, 'var_dump(' . $var . ')');
+                self::exec($fd, 'self::printVariant', [$var]);
                 break;
             case 'h':
             case 'help':
@@ -145,7 +183,7 @@ class RemoteShell
                 break;
             case 'c':
             case 'coros':
-                self::execCode($fd, 'RemoteShell::getCoros()');
+                self::exec($fd, 'self::getCoros', []);
                 break;
             /**
              * 查看协程堆栈
@@ -158,7 +196,7 @@ class RemoteShell
                     break;
                 }
                 $_cid = intval($args[1]);
-                self::execCode($fd, "RemoteShell::getBackTrace($_cid)");
+                self::exec($fd, 'self::getBackTrace', [$_cid]);
                 break;
             case 'i':
             case 'info':
