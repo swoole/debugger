@@ -5,18 +5,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
-      <library name="PHP">
+      <library name="PHP" type="php">
         <CLASSES>
-          <root url="file:///data/www/public/sdk" />
-          <root url="file://$MODULE_DIR$/../../framework" />
-          <root url="file://$MODULE_DIR$/../../swoole-ide-helper" />
-          <root url="file:///data/system" />
+          <root url="file://$MODULE_DIR$/../../ide-helper/output" />
         </CLASSES>
         <SOURCES>
-          <root url="file:///data/www/public/sdk" />
-          <root url="file://$MODULE_DIR$/../../framework" />
-          <root url="file://$MODULE_DIR$/../../swoole-ide-helper" />
-          <root url="file:///data/system" />
+          <root url="file://$MODULE_DIR$/../../ide-helper/output" />
         </SOURCES>
       </library>
     </orderEntry>
