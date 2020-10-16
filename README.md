@@ -23,10 +23,15 @@ htf@htf-All-Series:~/workspace/proj/remote-shell/tests$ telnet 127.0.0.1 9599
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is '^]'.
-e|exec [code]	执行PHP代码
+p|print [variant]	打印一个PHP变量的值
+e|exec [code]	执行一段PHP代码
 w|worker [id]	切换Worker进程
 l|list	打印服务器所有连接的fd
 s|stats	打印服务器状态
+c|coros	打印协程列表
+cs|costats	打印协程状态
+el|elapsed [cid]	打印某个协程运行的时间
+b|bt	打印协程调用栈
 i|info [fd]	显示某个连接的信息
 h|help	显示帮助界面
 q|quit	退出终端

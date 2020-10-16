@@ -25,6 +25,8 @@ class RemoteShell
         "l|list\t打印服务器所有连接的fd",
         "s|stats\t打印服务器状态",
         "c|coros\t打印协程列表",
+        "cs|costats\t打印协程状态",
+        "el|elapsed [cid]\t打印某个协程运行的时间",
         "b|bt\t打印协程调用栈",
         "i|info [fd]\t显示某个连接的信息",
         "h|help\t显示帮助界面",
@@ -124,6 +126,20 @@ class RemoteShell
         var_export(iterator_to_array(Coroutine::listCoroutines()));
     }
 
+    static function getCoStats()
+    {
+        var_export(Coroutine::stats());
+    }
+
+    static function getCoElapsed($cid)
+    {
+        if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40500) {
+            trigger_error("require swoole-4.5.0 or later.", E_USER_WARNING);
+            return;
+        }
+        var_export(Coroutine::getElapsed($cid));
+    }
+
     static function getBackTrace($_cid)
     {
         $info = Coroutine::getBackTrace($_cid);
@@ -196,7 +212,28 @@ class RemoteShell
                 self::exec($fd, 'self::getCoros', []);
                 break;
             /**
+             * 获取协程状态
+             * @link https://wiki.swoole.com/#/coroutine/coroutine?id=stats
+             */
+            case 'cs':
+            case 'costats':
+                self::exec($fd, 'self::getCoStats', []);
+                break;
+            /**
+             * 获取协程运行的时间
+             * @link https://wiki.swoole.com/#/coroutine/coroutine?id=getelapsed
+             */
+            case 'el':
+            case 'elapsed':
+                $cid = 0;
+                if (isset($args[1])) {
+                    $cid = intval($args[1]);
+                }
+                self::exec($fd, 'self::getCoElapsed', [$cid]);
+                break;
+            /**
              * 查看协程堆栈
+             * @link https://wiki.swoole.com/#/coroutine/coroutine?id=getbacktrace
              */
             case 'bt':
             case 'b':

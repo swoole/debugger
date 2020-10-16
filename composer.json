@@ -19,7 +19,8 @@
   },
   "require": {
     "php": ">=7.0",
-    "ext-swoole": ">=1.8"
+    "ext-swoole": ">=1.8",
+    "ext-json": "*"
   },
   "autoload": {
     "psr-4": {
