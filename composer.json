@@ -1,0 +1,32 @@
+{
+  "name": "swoole/debugger",
+  "description": "Swoole Remote Debugger",
+  "keywords": [
+    "swoole",
+    "swoole_server",
+    "coroutine",
+    "debug"
+  ],
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Tianfeng Han",
+      "email": "rango@swoole.com"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/swoole/debugger"
+  },
+  "require": {
+    "php": ">=7.0",
+    "ext-swoole": ">=1.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "Swoole\\Debugger\\": "src/"
+    },
+    "files": [
+      "src/functions.php"
+    ]
+  }
+}

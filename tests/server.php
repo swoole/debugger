@@ -1,7 +1,10 @@
 <?php
 require_once dirname(__DIR__) . '/src/RemoteShell.php';
 
-$serv = new swoole_server("127.0.0.1", 9501);
+use Swoole\Server;
+use Swoole\Debugger\RemoteShell;
+
+$serv = new Server("127.0.0.1", 9501);
 $serv->set(array(
     'worker_num' => 2,   //工作进程数量
 ));
