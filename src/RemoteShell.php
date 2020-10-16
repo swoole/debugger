@@ -1,5 +1,10 @@
 <?php
 
+namespace Swoole\Debugger;
+
+use Swoole\Coroutine;
+use Exception;
+
 class RemoteShell
 {
     const STX = "DEBUG";
@@ -40,10 +45,12 @@ class RemoteShell
         if (!$port) {
             throw new Exception("listen fail.");
         }
-        $port->set(array(
-            "open_eof_split" => true,
-            'package_eof' => "\r\n",
-        ));
+        $port->set(
+            array(
+                "open_eof_split" => true,
+                'package_eof' => "\r\n",
+            )
+        );
         $port->on("Connect", array(__CLASS__, 'onConnect'));
         $port->on("Close", array(__CLASS__, 'onClose'));
         $port->on("Receive", array(__CLASS__, 'onReceive'));
@@ -103,7 +110,10 @@ class RemoteShell
     {
         //不在当前Worker进程
         if (self::$contexts[$fd]['worker_id'] != self::$serv->worker_id) {
-            self::$serv->sendMessage(self::STX . serialize(['fd' => $fd, 'func' => $func, 'args' => $args]), self::$contexts[$fd]['worker_id']);
+            self::$serv->sendMessage(
+                self::STX . serialize(['fd' => $fd, 'func' => $func, 'args' => $args]),
+                self::$contexts[$fd]['worker_id']
+            );
         } else {
             self::call($fd, $func, $args);
         }
@@ -111,12 +121,12 @@ class RemoteShell
 
     static function getCoros()
     {
-        var_export(iterator_to_array(Swoole\Coroutine::listCoroutines()));
+        var_export(iterator_to_array(Coroutine::listCoroutines()));
     }
 
     static function getBackTrace($_cid)
     {
-        $info = Co::getBackTrace($_cid);
+        $info = Coroutine::getBackTrace($_cid);
         if (!$info) {
             echo "coroutine $_cid not found.";
         } else {
@@ -133,7 +143,7 @@ class RemoteShell
 
     static function evalCode($code)
     {
-        eval($code.';');
+        eval($code . ';');
     }
 
     /**
@@ -234,44 +244,5 @@ class RemoteShell
                 self::output($fd, "unknow command[$cmd]");
                 break;
         }
-    }
-}
-
-
-function get_debug_print_backtrace($traces)
-{
-    $ret = array();
-    foreach ($traces as $i => $call) {
-        $object = '';
-        if (isset($call['class'])) {
-            $object = $call['class'] . $call['type'];
-            if (is_array($call['args'])) {
-                foreach ($call['args'] as &$arg) {
-                    get_arg($arg);
-                }
-            }
-        }
-
-        $ret[] = '#' . str_pad($i, 3, ' ')
-            . $object . $call['function'] . '(' . implode(', ', $call['args'])
-            . ') called at [' . $call['file'] . ':' . $call['line'] . ']';
-    }
-
-    return implode("\n", $ret);
-}
-
-function get_arg(&$arg)
-{
-    if (is_object($arg)) {
-        $arr = (array)$arg;
-        $args = array();
-        foreach ($arr as $key => $value) {
-            if (strpos($key, chr(0)) !== false) {
-                $key = '';    // Private variable found
-            }
-            $args[] = '[' . $key . '] => ' . get_arg($value);
-        }
-
-        $arg = get_class($arg) . ' Object (' . implode(',', $args) . ')';
     }
 }
