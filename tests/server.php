@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/src/RemoteShell.php';
+require_once dirname(__DIR__) . '/src/functions.php';
 
 use Swoole\Server;
 use Swoole\Debugger\RemoteShell;
@@ -49,6 +50,7 @@ class Test
 
     static function test1()
     {
+        self::timerTest();
         self::test2();
     }
 
@@ -57,6 +59,18 @@ class Test
         while(true) {
             co::sleep(2.0);
         }
+    }
+
+    static function timerTest()
+    {
+        Swoole\Timer::tick(3000, function (int $timer_id, $param1, $param2) {
+            echo "timer_id #$timer_id, after 3000ms.\n";
+            echo "param1 is $param1, param2 is $param2.\n";
+
+            Swoole\Timer::tick(14000, function ($timer_id) {
+                echo "timer_id #$timer_id, after 14000ms.\n";
+            });
+        }, "A", "B");
     }
 }
 

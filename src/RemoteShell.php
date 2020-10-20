@@ -3,7 +3,9 @@
 namespace Swoole\Debugger;
 
 use Swoole\Coroutine;
+use Swoole\Timer;
 use Exception;
+use Throwable;
 
 class RemoteShell
 {
@@ -27,6 +29,9 @@ class RemoteShell
         "c|coros\t打印协程列表",
         "cs|costats\t打印协程状态",
         "el|elapsed [cid]\t打印某个协程运行的时间",
+        "tl|timer_list\t打印当前进程中所有定时器ID",
+        "ti|timer_info [timer_id]\t打印某个定时器信息",
+        "ts|timer_stats\t打印当前进程中的定时器状态",
         "b|bt\t打印协程调用栈",
         "i|info [fd]\t显示某个连接的信息",
         "h|help\t显示帮助界面",
@@ -110,14 +115,18 @@ class RemoteShell
 
     static protected function exec($fd, $func, $args)
     {
-        //不在当前Worker进程
-        if (self::$contexts[$fd]['worker_id'] != self::$serv->worker_id) {
-            self::$serv->sendMessage(
-                self::STX . serialize(['fd' => $fd, 'func' => $func, 'args' => $args]),
-                self::$contexts[$fd]['worker_id']
-            );
-        } else {
-            self::call($fd, $func, $args);
+        try {
+            //不在当前Worker进程
+            if (self::$contexts[$fd]['worker_id'] != self::$serv->worker_id) {
+                self::$serv->sendMessage(
+                    self::STX . serialize(['fd' => $fd, 'func' => $func, 'args' => $args]),
+                    self::$contexts[$fd]['worker_id']
+                );
+            } else {
+                self::call($fd, $func, $args);
+            }
+        } catch (Throwable $e) {
+            self::output($fd, $e->getMessage());
         }
     }
 
@@ -138,6 +147,33 @@ class RemoteShell
             return;
         }
         var_export(Coroutine::getElapsed($cid));
+    }
+
+    static function getTimerList()
+    {
+        if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40400) {
+            trigger_error("require swoole-4.4.0 or later.", E_USER_WARNING);
+            return;
+        }
+        var_export(iterator_to_array(Timer::list()));
+    }
+
+    static function getTimerInfo($timer_id)
+    {
+        if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40400) {
+            trigger_error("require swoole-4.4.0 or later.", E_USER_WARNING);
+            return;
+        }
+        var_export(Timer::info($timer_id));
+    }
+
+    static function getTimerStats()
+    {
+        if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40400) {
+            trigger_error("require swoole-4.4.0 or later.", E_USER_WARNING);
+            return;
+        }
+        var_export(Timer::stats());
     }
 
     static function getBackTrace($_cid)
@@ -244,6 +280,34 @@ class RemoteShell
                 }
                 $_cid = intval($args[1]);
                 self::exec($fd, 'self::getBackTrace', [$_cid]);
+                break;
+            /**
+             * 返回定时器列表
+             * @link https://wiki.swoole.com/#/timer?id=list
+             */
+            case 'tl':
+            case 'timer_list':
+                self::exec($fd, 'self::getTimerList', []);
+                break;
+            /**
+             * 返回 timer 的信息
+             * @link https://wiki.swoole.com/#/timer?id=info
+             */
+            case 'ti':
+            case 'timer_info':
+                $timer_id = 0;
+                if (isset($args[1])) {
+                    $timer_id = intval($args[1]);
+                }
+                self::exec($fd, 'self::getTimerInfo', [$timer_id]);
+                break;
+            /**
+             * 查看定时器状态
+             * @link https://wiki.swoole.com/#/timer?id=stats
+             */
+            case 'ts':
+            case 'timer_stats':
+                self::exec($fd, 'self::getTimerStats', []);
                 break;
             case 'i':
             case 'info':
