@@ -315,8 +315,8 @@ class RemoteShell
                 break;
             case 'i':
             case 'info':
-                if (empty($args[1])) {
-                    self::output($fd, "invalid command [" . trim($args[1]) . "].");
+                if (!isset($args[1])) {
+                    self::output($fd, "Missing fd.");
                     break;
                 }
                 $_fd = intval($args[1]);
@@ -346,7 +346,7 @@ class RemoteShell
                 $serv->close($fd);
                 break;
             default:
-                self::output($fd, "unknown command[$cmd]");
+                self::output($fd, "unknown command [$cmd]");
                 break;
         }
     }
