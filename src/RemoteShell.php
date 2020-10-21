@@ -21,7 +21,7 @@ class RemoteShell
     static $serv;
 
     static $menu = array(
-        "p|print [variant]\t打印一个PHP变量的值",
+        "p|print [variable]\t打印一个PHP变量的值",
         "e|exec [code]\t执行一段PHP代码",
         "w|worker [id]\t切换Worker进程",
         "l|list\t打印服务器所有连接的fd",
@@ -213,7 +213,7 @@ class RemoteShell
             case 'w':
             case 'worker':
                 if (!isset($args[1])) {
-                    self::output($fd, "invalid command.");
+                    self::output($fd, "Missing worker id.");
                     break;
                 }
                 $dstWorkerId = intval($args[1]);
@@ -223,7 +223,7 @@ class RemoteShell
             case 'e':
             case 'exec':
                 if (!isset($args[1])) {
-                    self::output($fd, "invalid command.");
+                    self::output($fd, "Missing code.");
                     break;
                 }
                 $var = trim($args[1]);
@@ -231,6 +231,10 @@ class RemoteShell
                 break;
             case 'p':
             case 'print':
+                if (!isset($args[1])) {
+                    self::output($fd, "Missing variable.");
+                    break;
+                }
                 $var = trim($args[1]);
                 self::exec($fd, 'self::printVariant', [$var]);
                 break;
