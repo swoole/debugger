@@ -206,9 +206,13 @@ class RemoteShell
      */
     static function onReceive($serv, $fd, $reactor_id, $data)
     {
-        $args = explode(" ", $data, 2);
+        $args = explode(" ", ltrim($data), 2);
         $cmd = trim($args[0]);
         unset($args[0]);
+        if ($cmd === '') {
+            self::output($fd, $cmd);
+            return;
+        }
         switch ($cmd) {
             case 'w':
             case 'worker':
