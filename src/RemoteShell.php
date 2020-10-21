@@ -32,7 +32,7 @@ class RemoteShell
         "tl|timer_list\t打印当前进程中所有定时器ID",
         "ti|timer_info [timer_id]\t打印某个定时器信息",
         "ts|timer_stats\t打印当前进程中的定时器状态",
-        "b|bt\t打印协程调用栈",
+        "b|bt [cid]\t打印某个协程调用栈",
         "i|info [fd]\t显示某个连接的信息",
         "h|help\t显示帮助界面",
         "q|quit\t退出终端",
@@ -274,8 +274,8 @@ class RemoteShell
             case 'bt':
             case 'b':
             case 'backtrace':
-                if (empty($args[1])) {
-                    self::output($fd, "invalid command [" . trim($args[1]) . "].");
+                if (!isset($args[1])) {
+                    self::output($fd, 'Missing coroutine id.');
                     break;
                 }
                 $_cid = intval($args[1]);
@@ -342,7 +342,7 @@ class RemoteShell
                 $serv->close($fd);
                 break;
             default:
-                self::output($fd, "unknow command[$cmd]");
+                self::output($fd, "unknown command[$cmd]");
                 break;
         }
     }

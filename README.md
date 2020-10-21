@@ -34,7 +34,7 @@ el|elapsed [cid]	打印某个协程运行的时间
 tl|timer_list	打印当前进程中所有定时器ID
 ti|timer_info [timer_id]	打印某个定时器信息
 ts|timer_stats	打印当前进程中的定时器状态
-b|bt	打印协程调用栈
+b|bt [cid]	打印某个协程调用栈
 i|info [fd]	显示某个连接的信息
 h|help	显示帮助界面
 q|quit	退出终端
