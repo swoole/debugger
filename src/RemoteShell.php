@@ -186,7 +186,7 @@ class RemoteShell
         }
     }
 
-    static function printVariant($var)
+    static function printVariable($var)
     {
         $var = ltrim($var, '$ ');
         var_dump($var);
@@ -236,7 +236,7 @@ class RemoteShell
                     break;
                 }
                 $var = trim($args[1]);
-                self::exec($fd, 'self::printVariant', [$var]);
+                self::exec($fd, 'self::printVariable', [$var]);
                 break;
             case 'h':
             case 'help':
