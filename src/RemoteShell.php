@@ -217,7 +217,7 @@ class RemoteShell
             case 'w':
             case 'worker':
                 if (!isset($args[1])) {
-                    self::output($fd, 'Missing worker id.');
+                    self::output($fd, 'missing worker id.');
                     break;
                 }
                 $dstWorkerId = intval($args[1]);
@@ -233,7 +233,7 @@ class RemoteShell
             case 'e':
             case 'exec':
                 if (!isset($args[1])) {
-                    self::output($fd, 'Missing code.');
+                    self::output($fd, 'missing code.');
                     break;
                 }
                 $var = trim($args[1]);
@@ -242,7 +242,7 @@ class RemoteShell
             case 'p':
             case 'print':
                 if (!isset($args[1])) {
-                    self::output($fd, 'Missing variable.');
+                    self::output($fd, 'missing variable.');
                     break;
                 }
                 $var = trim($args[1]);
@@ -289,7 +289,7 @@ class RemoteShell
             case 'b':
             case 'backtrace':
                 if (!isset($args[1])) {
-                    self::output($fd, 'Missing coroutine id.');
+                    self::output($fd, 'missing coroutine id.');
                     break;
                 }
                 $_cid = intval($args[1]);
@@ -326,7 +326,7 @@ class RemoteShell
             case 'i':
             case 'info':
                 if (!isset($args[1])) {
-                    self::output($fd, 'Missing fd.');
+                    self::output($fd, 'missing fd.');
                     break;
                 }
                 $_fd = intval($args[1]);
