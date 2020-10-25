@@ -9,7 +9,7 @@ use Throwable;
 
 class RemoteShell
 {
-    const STX = "DEBUG";
+    const STX = 'DEBUG';
 
     private static $contexts = array();
 
@@ -46,27 +46,27 @@ class RemoteShell
      * @param int $port
      * @throws Exception
      */
-    static function listen($serv, $host = "127.0.0.1", $port = 9599)
+    static function listen($serv, $host = '127.0.0.1', $port = 9599)
     {
         $port = $serv->listen($host, $port, SWOOLE_SOCK_TCP);
         if (!$port) {
-            throw new Exception("listen fail.");
+            throw new Exception('listen fail.');
         }
         $port->set(
             array(
-                "open_eof_split" => true,
+                'open_eof_split' => true,
                 'package_eof' => "\r\n",
             )
         );
-        $port->on("Connect", array(__CLASS__, 'onConnect'));
-        $port->on("Close", array(__CLASS__, 'onClose'));
-        $port->on("Receive", array(__CLASS__, 'onReceive'));
+        $port->on('Connect', array(__CLASS__, 'onConnect'));
+        $port->on('Close', array(__CLASS__, 'onClose'));
+        $port->on('Receive', array(__CLASS__, 'onReceive'));
 
         if (method_exists($serv, 'getCallback')) {
             self::$oriPipeMessageCallback = $serv->getCallback('PipeMessage');
         }
 
-        $serv->on("PipeMessage", array(__CLASS__, 'onPipeMessage'));
+        $serv->on('PipeMessage', array(__CLASS__, 'onPipeMessage'));
         self::$serv = $serv;
     }
 
@@ -79,9 +79,9 @@ class RemoteShell
     static function output($fd, $msg)
     {
         if (!isset(self::$contexts[$fd]['worker_id'])) {
-            $msg .= "\r\nworker#" . self::$serv->worker_id . "$ ";
+            $msg .= "\r\nworker#" . self::$serv->worker_id . '$ ';
         } else {
-            $msg .= "\r\nworker#" . self::$contexts[$fd]['worker_id'] . "$ ";
+            $msg .= "\r\nworker#" . self::$contexts[$fd]['worker_id'] . '$ ';
         }
         self::$serv->send($fd, $msg);
     }
@@ -96,7 +96,7 @@ class RemoteShell
         //不是 debug 消息
         if (!is_string($message) or substr($message, 0, strlen(self::STX)) != self::STX) {
             if (self::$oriPipeMessageCallback == null) {
-                trigger_error("require swoole-4.3.0 or later.", E_USER_WARNING);
+                trigger_error('require swoole-4.3.0 or later.', E_USER_WARNING);
                 return;
             }
             return call_user_func(self::$oriPipeMessageCallback, $serv, $src_worker_id, $message);
@@ -143,44 +143,44 @@ class RemoteShell
     static function getCoElapsed($cid)
     {
         if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40500) {
-            trigger_error("require swoole-4.5.0 or later.", E_USER_WARNING);
-            return;
+            echo 'require swoole-4.5.0 or later.';
+        } else {
+            var_export(Coroutine::getElapsed($cid));
         }
-        var_export(Coroutine::getElapsed($cid));
     }
 
     static function getTimerList()
     {
         if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40400) {
-            trigger_error("require swoole-4.4.0 or later.", E_USER_WARNING);
-            return;
+            echo 'require swoole-4.4.0 or later.';
+        } else {
+            var_export(iterator_to_array(Timer::list()));
         }
-        var_export(iterator_to_array(Timer::list()));
     }
 
     static function getTimerInfo($timer_id)
     {
         if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40400) {
-            trigger_error("require swoole-4.4.0 or later.", E_USER_WARNING);
-            return;
+            echo 'require swoole-4.4.0 or later.';
+        } else {
+            var_export(Timer::info($timer_id));
         }
-        var_export(Timer::info($timer_id));
     }
 
     static function getTimerStats()
     {
         if (!defined('SWOOLE_VERSION_ID') || SWOOLE_VERSION_ID < 40400) {
-            trigger_error("require swoole-4.4.0 or later.", E_USER_WARNING);
-            return;
+            echo 'require swoole-4.4.0 or later.';
+        } else {
+            var_export(Timer::stats());
         }
-        var_export(Timer::stats());
     }
 
     static function getBackTrace($_cid)
     {
         $info = Coroutine::getBackTrace($_cid);
         if (!$info) {
-            echo "coroutine $_cid not found.";
+            echo "coroutine {$_cid} not found.";
         } else {
             echo get_debug_print_backtrace($info);
         }
@@ -206,7 +206,7 @@ class RemoteShell
      */
     static function onReceive($serv, $fd, $reactor_id, $data)
     {
-        $args = explode(" ", ltrim($data), 2);
+        $args = explode(' ', ltrim($data), 2);
         $cmd = trim($args[0]);
         unset($args[0]);
         if ($cmd === '') {
@@ -217,17 +217,23 @@ class RemoteShell
             case 'w':
             case 'worker':
                 if (!isset($args[1])) {
-                    self::output($fd, "Missing worker id.");
+                    self::output($fd, 'Missing worker id.');
                     break;
                 }
                 $dstWorkerId = intval($args[1]);
+                $workerNum = $serv->setting['worker_num'] ?? 0;
+                $taskWorkerNum = $serv->setting['task_worker_num'] ?? 0;
+                if ($dstWorkerId > $workerNum + $taskWorkerNum - 1) {
+                    self::output($fd, "worker_id {$dstWorkerId} does not exist.");
+                    break;
+                }
                 self::$contexts[$fd]['worker_id'] = $dstWorkerId;
-                self::output($fd, "[switching to worker " . self::$contexts[$fd]['worker_id'] . "]");
+                self::output($fd, '[switching to worker ' . self::$contexts[$fd]['worker_id'] . ']');
                 break;
             case 'e':
             case 'exec':
                 if (!isset($args[1])) {
-                    self::output($fd, "Missing code.");
+                    self::output($fd, 'Missing code.');
                     break;
                 }
                 $var = trim($args[1]);
@@ -236,7 +242,7 @@ class RemoteShell
             case 'p':
             case 'print':
                 if (!isset($args[1])) {
-                    self::output($fd, "Missing variable.");
+                    self::output($fd, 'Missing variable.');
                     break;
                 }
                 $var = trim($args[1]);
@@ -320,13 +326,13 @@ class RemoteShell
             case 'i':
             case 'info':
                 if (!isset($args[1])) {
-                    self::output($fd, "Missing fd.");
+                    self::output($fd, 'Missing fd.');
                     break;
                 }
                 $_fd = intval($args[1]);
                 $info = $serv->getClientInfo($_fd);
                 if (!$info) {
-                    self::output($fd, "connection $_fd not found.");
+                    self::output($fd, "connection {$_fd} not found.");
                 } else {
                     self::output($fd, var_export($info, true));
                 }
@@ -350,7 +356,7 @@ class RemoteShell
                 $serv->close($fd);
                 break;
             default:
-                self::output($fd, "unknown command [$cmd]");
+                self::output($fd, "unknown command [{$cmd}]");
                 break;
         }
     }
